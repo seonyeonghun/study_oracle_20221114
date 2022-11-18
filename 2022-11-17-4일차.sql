@@ -116,6 +116,8 @@ FROM    employees
 WHERE   department_id = 30
 OR     department_id = 60;
 
+-- 5일차 파일로 넘어갑니다.
+
 
 -- 3) NOT 연산은 조건이 TRUE면 FALSE를, FALSE면 TRUE를 반환
 
