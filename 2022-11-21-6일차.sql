@@ -180,7 +180,103 @@ SELECT  FLOOR(0.12345) C1,
 FROM    dual;        
 
 
--- 3.2 문자함수
+-- MOD(m, n) : m을 n으로 나눈 나머지 값을 반환하는 함수
+-- n에 0이 오면, m의 값을 그대로 반환한다.
+-- 프로그래밍 언어 : 0으로 나누면 ==> Zero Divide Error 발생
+SELECT  MOD(17, 4) M1, -- 17 = 4 x 4 + 1
+        MOD(17, -4) M2, -- 17 = -4 x -4 + 1
+        MOD(-17, -4) M3, -- -17 = -4 x 4 - 1
+        MOD(17, 0) M4    --  17 = 0 x  + 17
+FROM dual;
+
+
+--[연습문제3-1]
+-- 1. 사원 테이블에서 100번 부서와 110번 부서의 사원에 대해, 사번,이름,급여와 15% 인상된 급여를 조회하는 쿼리를
+--    (employees)     (department_id)                  (Select clause  : 절, 구문)
+-- 작성하시오 (단, 15% 인상된 급여는 정수로 표시하고 컬럼명은 Increased Salary라고 한다)
+
+SELECT  employee_id, last_name, salary, 
+        ROUND(salary + salary * 0.15) "ROUND1",
+        ROUND(salary + salary * 0.15, 0) "ROUND2",
+        TRUNC(salary + salary * 0.15) "TRUNC3",
+        TRUNC(salary + salary * 0.15, 0) "TRUNC4",
+        CEIL(salary + salary * 0.15) "CEIL5",
+        FLOOR(salary + salary * 0.15) "FLOOR6"
+FROM    employees
+WHERE   department_id IN (100, 110)
+ORDER BY    1;
+
+SELECT 9000 + 9000 * 0.15
+FROM    dual;
+
+
+-- 3.2 문자함수(p.22)
+-- CONCAT(char1, char2) : 파라미터로 받은 두 문자열을 연결하여 결과를 반환하는 함수
+-- || : 문자열 연결 연산자
+[예제 3-9]
+SELECT  CONCAT('Hello','Oracle') CONCAT1, -- 문자열 연결 함수를 사용
+        'Hello'||'Oracle' CONCAT2          -- 문자열 연결 연산자를 사용
+FROM    dual;        
+
+-- 대,소문자 함수
+-- INITCAP(char) : 파라미터로 받은 알파벳 단어 단위로 첫 글자를 대문자로 하여 결과를 반환하는 함수
+-- UPPER(char) : 파라미터로 받은 알파벳 모두를 대문자화하여 반환하는 함수
+-- LOWER(char) :                  "        소문자화하여 반환하는 함수
+
+[예제3-10] 
+SELECT  INITCAP('i|am|a|boy') INIT1,
+        UPPER('i am a boy') UPPER2,
+        LOWER('I AM A BODY') LOWER3
+FROM    dual;        
+
+
+-- LPAD(char1, n [,char2]) : 전체 문자열의 길이 n에서 char1 문자의 길이를 뺀 만큼 char2 문자표현으로 왼쪽에서 채워서 반환하는 함수
+-- RPAD(char1, n [,char2]) :                         "                                 "     오른쪽에서   "      
+-- Left, Right
+-- PAD
+
+
+SELECT  LPAD('Page 1',15,'*.') "LPAD example",
+        RPAD('Page 1',15,'*.') "RPAD example"
+FROM DUAL;
+/*
+LPAD example
+---------------
+*.*.*.*.*Page 1
+*/
+
+-- 제거하고자하는 문자 [,char2] 생략시 기본값으로 공백문자 한 개가 사용된다.
+-- LTRIM(char1 [,char2]) : 왼쪽에서~ char1에서 char2로 지정한 문자를 제거한 결과를 반환
+[예제3-12]
+SELECT  '[' || LTRIM('   ABCDEFG   ') || ']' LTRIM1,
+        '[' || LTRIM('   ABCDEFG   ',' ') || ']' LTRIM2,
+        LTRIM('ABCDEFG', 'AB') LTRIM3,
+        LTRIM('ABCDEFG', 'BA') LTRIM4,
+        LTRIM('ABCDEFG', 'BC') LTRIM5
+FROM    dual;
+
+
+-- RTRIM(char1 [,char2]) : 오른쪽에서 char1에서 char2로 지정한 문자를 제거한 결과를 반환
+[예제3-12]
+SELECT  '[' || RTRIM('   ABCDEFG   ') || ']' RTRIM1,
+        '[' || RTRIM('   ABCDEFG   ',' ') || ']' RTRIM2,
+        RTRIM('ABCDEFG', 'FG') RTRIM3,
+        RTRIM('ABCDEFG', 'GF') RTRIM4,
+        RTRIM('ABCDEFG', 'BC') RTRIM5
+FROM    dual;
+
+-- TRIM() : 방향을 좌,우,양쪽에서~ char1에서 char2로 지정한 문자를 제거한 결과를 반환
+
+
+
+
+
+
+
+
+
+
+
 -- 3.3 날짜함수
 -- 3.4 변환함수
 -- 3.5 NULL 관련 함수
