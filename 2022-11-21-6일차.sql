@@ -380,10 +380,129 @@ FROM    employees;
 -- 데이터에 따른 길이등을 설계할때 참조
 
 
-
-
 -- 3.3 날짜함수
--- 3.4 변환함수
+-- 날짜와 시간을 연산의 대상으로 하는 함수
+
+SELECT  SYSDATE 
+FROM    dual;
+-- SYSDATE()가 함수 아닌가? 그만큼 자주 사용하는 함수라서 간단하게 표기
+
+-- 날짜의 형태를 확인하는 명령
+SELECT *
+FROM v$nls_parameters; 
+
+-- RR/MM/DD HH:MI:SS로 형태를 바꾸어야 시간정보가 보임
+ALTER SESSION SET nls_date_format = 'RR/MM/DD HH:MI:SS'; -- 현재 로그인한 hr 스키마에서 일시적으로 바꾸는것이지 영구적인 설정 변경은 아님,
+
+-- 매번 시간/날짜 정보를 출력하기 위해 설정을 바꾸는 것 보다는,
+-- 시간/날짜 함수 또는 변환함수를 사용하는 것이 좋다!!
+
+
+-- ADD_MONTHS(date, n)
+-- 특정 날짜에 지정한 개월의 수를 더해서 그 결과를 날짜로 반환하는 함수
+-- ADD : 추가, MONTH : 월/개월
+
+SELECT  ADD_MONTHS(SYSDATE, 1) MONTH1,
+        ADD_MONTHS(SYSDATE, 2) MONTH2,
+        ADD_MONTHS(SYSDATE, -3) MONTH3
+FROM    dual;        
+
+
+-- MONTHS_BETWEEN(date1, date2)
+-- 두 날짜 사이의 개월 수 (=차이)를 반환하는 함수
+-- date1 - date2 (이후 날짜 - 이전 날짜)
+
+[예제3-22]
+-- 날짜 데이터, 문자 데이터는 '' 로 묶어서 표현
+-- RR/MM/DD
+-- YYYY-MM-DD
+SELECT  TRUNC(MONTHS_BETWEEN(SYSDATE, '2013-03-20')) || '개월' PASSED,
+        TRUNC(MONTHS_BETWEEN('2013-08-28', SYSDATE)) || '개월' REMAINED
+FROM    dual;
+
+-- LAST_DAY(date)
+-- date에 해당하는 마지막 날짜를 반환한다.
+-- ex> 날짜가 3월에 해당하면, 31을 반환하고 4월이면 30일을 반환한다.
+[예제3-23]
+SELECT  LAST_DAY(SYSDATE) LAST1,
+        LAST_DAY('2013-02-01') LAST2
+FROM    dual;        
+
+-- NEXT_DAY(date, char)
+-- date 이후의 날짜에서 char로 명시된 첫번째 일자를 반환
+-- char에 요일에 해당하는 문자 SUNDAY, MONDAY,...와 약어인 SUN, MON,..
+-- 또는 요일에 해당하는 숫자 1:일요일, 2:월요일, ..7:토요일
+-- v$nls_parameter 설정에서 NLS_LANGUAGE, NLS_TERRIORY 설정(기본값이 KOREAN이라서 SUNDAY를 일요일 등으로 표시)
+select *
+from v$nls_parameters;
+
+[예제3-24]
+SELECT  NEXT_DAY(SYSDATE, '월요일') NEXT1,
+        NEXT_DAY(SYSDATE, '금요일') NEXT2,
+        NEXT_DAY(SYSDATE, '일') NEXT3,
+        NEXT_DAY(SYSDATE, 4) NEXT4 -- 1:일요일, 2,3,4:수요일
+FROM    dual;
+
+-- ROUND(n [,i]) : -i면 정수부, i는 소수부에서 반올림하여 반환 <숫자함수>
+-- ROUND(date, fmt) : 반올림 된 날짜를 fmt에 맞게 그 결과를 반환  <날짜함수>
+[예제3-25]
+
+-- ※ Java 형변환(Casting) 함수처럼 사용, ORACLE에서는 한번에 숫자 --> 날짜로 변환 불가, 단계적으로 변환은 가능!!
+
+SELECT  ROUND(TO_DATE('2013-06-30'), 'YYYY') R1, -- TO_DATE() : 문자 데이터를 날짜 데이터로 변환하는 함수
+        ROUND(TO_DATE('2013-07-01'), 'YYYY') R2,
+        ROUND(TO_DATE('2013-12-15'), 'MONTH') R3,
+        ROUND(TO_DATE('2013-12-16'), 'MM') R4,
+        ROUND(TO_DATE('2013-05-27 11:59:59', 'YYYY-MM-DD HH24:MI:SS'), 'DD') R5,
+        ROUND(TO_DATE('2013-05-27 12:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'DD') R6,
+        ROUND(TO_DATE('2013-05-29'), 'DAY') R7,
+        ROUND(TO_DATE('2013-05-30'), 'DAY') R8
+FROM    dual;        
+/*
+select *
+from v$nls_parameters; -- 동아시아(=한국)에서 설치된 데이터베이스의 설정값
+
+select *
+from nls_database_parameters; -- 실제 오라클 데이터베이스 기본 세팅
+
+-- 언어를 영문으로 (임시) 변경
+alter session set nls_language = 'KOREA'; -- ENGLISH 
+alter session set nls_territory = 'KOREA'; -- AMERICA, ORA-12705
+-- ENGLISH, AMIERICA 변경은 가능하나 ORA-01861 오류 발생
+*/
+select *
+from employees
+where department_id = :no;
+
+
+
+-- 3.4 변환함수(p.30)
+-- TO_DATE() : 문자를 날짜로 ★
+-- TO_CHAR() : 숫자를 문자로 ★
+-- TO_NUMBER() : 문자를 숫자로
+/*
+            숫자 --------->  문자  ---------> 날짜
+TO_NUMBER() <---->      TO_CHAR()  <------>     TO_DATE()
+            숫자  <---------- 문자  <-------- 날짜
+*/
+
+
+-- 3.4.1 TO_CHAR(date/n [,fmt]) : 숫자/날짜를 문자로 변환하는 함수
+SELECT TO_CHAR(SYSDATE, 'YYYY-MM-DD HH24:MI:SS') CHAR1,
+        TO_CHAR(SYSDATE, 'YYYY') CHAR2,
+        TO_CHAR(SYSDATE, 'YYYY/MM/DD') CHAR3
+FROM dual; -- 시간정보 출력x
+
+SELECT TO_CHAR(TO_DATE('0630', 'MM/DD'), 'RRRR/MM/DD') CHAR --ROUND : 반올림
+FROM dual;
+
+SELECT TO_CHAR (TO_DATE('022017','MM/YYYY'), 'MM/YYYY')
+FROM dual;
+
+
+--ALTER SESSION SET NLS_DATEFORMAT = 'RR/MM/DD HH24:MI:SS'; -- 매번 설정을 변경해가면서? NO!
+
+
 -- 3.5 NULL 관련 함수
 -- 3.6 DECODE와 CASE
 
