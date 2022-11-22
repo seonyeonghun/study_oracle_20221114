@@ -266,13 +266,118 @@ SELECT  '[' || RTRIM('   ABCDEFG   ') || ']' RTRIM1,
 FROM    dual;
 
 -- TRIM() : 방향을 좌,우,양쪽에서~ char1에서 char2로 지정한 문자를 제거한 결과를 반환
+-- 왼쪽에서 제거할때는 LEADING
+-- 오른쪽에서 제거할때는 TRAILING
+-- 양쪽에서 제거할때는 BOTH , 디폴트값(=생략가능)
+-- 제거할 문자의 디폴트값도 공백 한 개가 사용된다.
+
+[예제3-14]
+SELECT '[' || TRIM('   ABCDEFG   ') || ']' T1, -- BOTH : 왼쪽/오른쪽(=양쪽)에서 (디폴트)공백제거
+        TRIM(LEADING 'A' FROM 'ABCDEFG') T2, -- LEADING: 왼쪽에서 (오른쪽방향으로)
+        TRIM(TRAILING 'G' FROM 'ABCDEFG') T3, -- TRAILING : 오른족에서 (왼쪽으로)
+        TRIM(BOTH 'A' FROM 'ABCDAEFAGA') T4, -- BOTH 명시 
+        TRIM('A' FROM 'ABCDEFG') T5 -- 생략시 DEFAULT
+FROM    dual;        
+
+
+-- SUBSTR(char, position [,length]) : 문자열의 일부를 분리(=추출)해서 반환한다. ★★
+-- char 문자열의 position 으로 지정된 위치로부터 length개의 문자를 떼어내어 그 결과를 반환한다.
+-- length 생략시 : position 부터 문자열의 끝까지 반환
+-- position 값을 0으로 명시할 경우, 디폴트로 1이 적용되어 첫번째 자리부터 length 만큼의 문자열을 반환한다.
+[예제3-15]
+SELECT  SUBSTR('You are not alone', 9, 3) STR1,
+        SUBSTR('You are not alone', 5) STR2,
+        SUBSTR('You are not alone', 0, 5) STR3,
+        SUBSTR('You are not alone', 1, 5) STR4,        
+FROM    dual;        
+
+SELECT 'seonyeonghun@kakao.com' EMAIL_ADDR,
+        SUBSTR('seonyeonghun@kakao.com', 1, 12) EMAIL_ID,
+        SUBSTR('seonyeonghun@kakao.com', 14) EMAIL_DOMAIN
+FROM    dual;        
+
+-- =========================================================
+-- position의 값의 음수로 작성하면, 그 위치가 오른쪽부터 시작된다.
+-- =========================================================
+SELECT  SUBSTR('You are not alone', -9, 3) STR1,
+        SUBSTR('You are not alone', -5) STR2,
+        SUBSTR('You are not alone', 0, 5) STR3,
+        SUBSTR('You are not alone', -1, 5) || ']' STR4        
+FROM    dual;        
+
+
+-- REPLACE(char, search_string [,replace_string])
+-- 문자열중 일부를 다른 문자열로 변경하여, 그 결과를 반환한다.
+-- XSS(Cross site script) 해킹 공격 --> 검색하는 서비스, 여러 사용자의 입력을 받는 서비스를 제공할때 무력화하는 목적으로
+-- 사용할수도 있고, 말 그대로 문자열 일부를 다른 문자로 치환할 수 있음
+-- 문자열은 대,소문자를 구분  vs  SQL 자체는 대소문자를 구분하지 않는다.
+
+SELECT  REPLACE('You are not alone', 'You', 'We') REP1,
+        REPLACE('You are not alone', 'not') || ']' REP2,
+        REPLACE('You are not alone', 'not', null)  || ']' REP3
+FROM    dual;
+
+-- TRANSLATE(char, from_string, to_string)
+-- char 문자열에서 해당문자를 찾아 1:1로 변환한 결과를 반환한다.
+[예제3-18]
+SELECT TRANSLATE('u! You are not alone', 'You', 'We') TRANS
+FROM    dual;
+
+
+-- Quiz. '너는 나를 모르는데 나는 너를 알겠느냐' 을 REPLACE와 TRANSLATE로 변환하여 다음과 같이 변경해보세요
+-- 1.REPLACE 함수를 사용 --> 나는 나를 모르는데 나는 나를 알겠느냐
+SELECT  REPLACE('너는 나를 모르는데 나는 너를 알겠느냐', '너', '나') REP -- '너'를 '나'로 변경
+FROM    dual;
+
+-- 2.TRANSLATE 함수를 사용 --> 나는 너를 모르는데 너는 나를 알겠는냐
+SELECT  TRANSLATE('너는 나를 모르는데 나는 너를 알겠느냐', '너나', '나너') TRANS
+FROM    dual;
+
+-- 종합
+SELECT  REPLACE('너는 나를 모르는데 나는 너를 알겠느냐', '너', '나') REP,
+        TRANSLATE('너는 나를 모르는데 나는 너를 알겠느냐', '너나', '나너') TRANS
+FROM    dual;
 
 
 
+-- INSTR(char, search_string [,position] [,_th]) ★★
+-- 문자열에서 특정 문자열의 시작 위치를 반환하는 함수
+-- char 는 대상 문자열, search_string은 찾는 문자열
+-- position은 문자열의 찾는 시작위치, _th는 몇번째 인지를 명시 (단, 생략시 디폴트값은 1)
+-- 찾는 문자열이 발견되지 않으면 0을 반환한다.
+
+[예제3-19]
+SELECT  INSTR('Every Sha-la-la-la', 'la') INSTR1,
+        INSTR('Every Sha-la-la-la', 'la', 7) INSTR2,
+        INSTR('Every Sha-la-la-la', 'la', 1, 2) INSTR3,
+        INSTR('Every Sha-la-la-la', 'la', 12, 2) INSTR4,
+        INSTR('Every Sha-la-la-la', 'la', 15, 2) INSTR5
+FROM    dual;
 
 
+SELECT 'seonyeong@kakao.com' EMAIL_ADDR,
+        SUBSTR('seonyeong@kakao.com', 1, 12) EMAIL_ID,
+        SUBSTR('seonyeong@kakao.com', 14) EMAIL_DOMAIN
+FROM    dual; 
 
+-- 자신의 이메일 주소를 이용해서 @의 위치를 INSTR() 으로 찾고, SUBSTR() 으로
+-- EMAIL ID, EMAIL DOMAIN을 분리해 보세요!
+-- ※ EXMPLOYEES 테이블에도 EMAIL 이 있지만, @domain.com이 없으므로, 이메일 아이디 라고 보면 됨!
+-- email || '@naver.com' EMAIL_ADDR 조회할 수 있음
 
+SELECT  'oracle21c12312312312@kakao.com' EMAIL_ADDR,
+        SUBSTR('oracle21c12312312312@kakao.com', 1, INSTR('oracle21c12312312312@kakao.com','@')-1) EAMIL_ID,
+        '@' DIVIDER,
+        SUBSTR('oracle21c12312312312@kakao.com', INSTR('oracle21c12312312312@kakao.com','@')+1) EAMIL_DOMAIN
+FROM    dual;        
+
+SELECT employee_id, first_name, LOWER(TRANSLATE(email, 'akn','*!')) || '@oracle.com' email
+FROM    employees;
+
+-- LENGTH(char) vs LENGTHB(char)
+-- 문자열의 길이를 반환합니다. vs 문자열의 BYTE 값을 반환합니다.
+-- 영문 1자는 1BYTE, 동아시아(한,중,일) 지역의 1글자는 3~4BYTE로 설정되므로 실제 DB 설계시 저장공간, 컬럼의 정의시
+-- 데이터에 따른 길이등을 설계할때 참조
 
 
 
