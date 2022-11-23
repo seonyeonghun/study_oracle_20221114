@@ -488,7 +488,7 @@ TO_NUMBER() <---->      TO_CHAR()  <------>     TO_DATE()
 
 
 -- 3.4.1 TO_CHAR(date/n [,fmt]) : 숫자/날짜를 문자로 변환하는 함수
-SELECT TO_CHAR(SYSDATE, 'YYYY-MM-DD HH24:MI:SS') CHAR1,
+SELECT  TO_CHAR(SYSDATE, 'YYYY-MM-DD HH24:MI:SS') CHAR1,
         TO_CHAR(SYSDATE, 'YYYY') CHAR2,
         TO_CHAR(SYSDATE, 'YYYY/MM/DD') CHAR3
 FROM dual; -- 시간정보 출력x
@@ -500,11 +500,239 @@ SELECT TO_CHAR (TO_DATE('022017','MM/YYYY'), 'MM/YYYY')
 FROM dual;
 
 
+
+[예제3-27]
+-- 기본 데이터베이스 환경설정 : RR/MM/DD
+
+SELECT  TO_CHAR(SYSDATE, 'YYYY-MM-DD') FMT1,
+        TO_CHAR(SYSDATE, 'RR/MM/DD HH:MI:SS') FMT2,
+        TO_CHAR(SYSDATE, 'YY-MM-DD DAY') FMT3
+FROM    dual;        
+
+
+[예제3-28]
+SELECT  TO_CHAR(12345, '9999999') NUM_FMT1,
+        TO_CHAR(12345, '0999999') NUM_FMT2,
+        TO_CHAR(123.45, '$99999.9') NUM_FMT3,
+        TO_CHAR(12345, 'L9,999,999') NUM_FMT4
+FROM    dual;    
+
+-- 샘플 데이터에 적용해보기
+SELECT employee_id, last_name, TO_CHAR(salary * 12, '$9,999,999') "Annual Salary"
+FROM    employees
+ORDER BY    "Annual Salary" DESC;
+
+
+
+-- TO_NUMBER() 
+-- 문자를 숫자로 변환하여 그 결과를 반환
+SELECT 1 + '1' SUM
+FROM    dual; -- 묵시적 캐스팅(=자동으로 형식에 맞춰서)
+
+SELECT  TO_NUMBER('12345') NUM1,
+        TO_NUMBER('123.45') NUM2
+FROM dual;        
+
+
+-- TO_DATE(char [,fmt])
+-- 문자 데이터를 날짜 데이터로 변환한 결과를 반환하는 함수
+
+SELECT  TO_DATE('2013-05-27') DATE1, -- 문자를 단순히 년-월-일 형태로 바꿀때
+        TO_DATE('2013-06-27 11:12:35', 'YYYY/MM/DD HH:MI:SS AM') DATE2 -- 내부설정이 RR/MM/DD로만..
+FROM    dual;        
+
+
+-- 한번만 테스트
+ALTER SESSION SET NLS_DATE_FORMAT = 'RR/MM/DD';
+
+
+
+
+        
+
 --ALTER SESSION SET NLS_DATEFORMAT = 'RR/MM/DD HH24:MI:SS'; -- 매번 설정을 변경해가면서? NO!
 
 
 -- 3.5 NULL 관련 함수
+-- null :  값이 0 이 아니라, 데이터가 null 인 (=빈 ,입력되지 않은 상태)
+
+-- ex> 보너스를 계산한다고 했을때?
+SELECT  employee_id, last_name, salary, commission_pct,
+        TO_CHAR(salary + salary * commission_pct, '$9,999,999') bonus
+FROM    employees;
+
+-- 3.5.1 NVL(expr1, expr2)
+-- 첫번째 expr1이 NULL 이면, expr2를 반환하고 
+--       "       NULL 아니면, expr1을 반환하는 함수
+-- expr1, expr2의 데이터 타입은 서로 같아야 함.
+
+
+-- 커미션 금액이 1000 달러 미만인 사원들에게 보너스를 지급하고자 할때, 이들의 명단을 조회해보자
+-- 커미션 ==> 보너스, 인센티브, 수수료 등으로 순화
+[예제 3-31] 사번, 이름, 급여, 커미션율, 커미션 금액을 조회하시오
+SELECT  employee_id emp_id, last_name, salary, commission_pct,
+        NVL(commission_pct, 0) * salary incentive, department_id
+FROM    employees
+WHERE   NVL(commission_pct, 0) * salary < 1000; -- 6 rows   vs   78 rows (0 ~ 1000 미만)
+
+-- commission_pct가 NULL인 사원 : 총 107명중 50명
+SELECT *
+FROM    employees
+WHERE   commission_pct IS NULL; -- 50 rows
+
+-- 기존 employees 테이블의 인센티브 컬럼이 NULL인 사원들은 0으로 처리
+--update employees
+--set commission_pct = 0
+--where   commission_pct IS NULL;
+
+-- 3.5.2 NVL2(expr1, expr2, expr3)
+-- expr1이 NULL 이면 expr3 반환하고
+-- expr1이 NULL 아니면 expr2를 반환하는 함수
+-- NVL(expr1, expr2) 와 차이점을 기준으로 구분
+
+[예제3-33] salary와 commission_pct를 곱해서 인센티브를 지급한다고 할때, commission_pct가 NULL 이면 총 급여는
+salary 만, NULL이 아니면 salary + 인센티브가 총 급여가 된다.
+
+SELECT  employee_id, last_name, 
+        NVL(commission_pct, 0) comm_pct,
+        TO_CHAR(salary, '$9,999,999') salary,         
+        TO_CHAR(salary * NVL(commission_pct, 0), '$9,999,999') incentive,
+        NVL2(commission_pct, 
+        TO_CHAR(salary * (1 + commission_pct), '$9,999,999'), 
+        -- salary + salary * commission_pct <--> salary * (1 + commission_pct)
+        TO_CHAR(salary, '$9,999,999')) total_salary
+FROM    employees;     
+
+
+-- 3.5.3 COALESCE(exp1, exp2, exp3,...)
+-- 함수의 파라미터 목록에서 처음으로 NULL이 아닌 값을 반환하는 함수
+-- 따라서 파라미터 목록에는 반드시 NULL 아닌 값이 있어야 함
+-- 만약, 모두 NULL 이라면 NULL 반환하는 함수
+
+[예제3-35] 
+SELECT  COALESCE('A', 'B', 'C', NULL) first,
+        COALESCE(NULL, 'B', 'C') second,
+        COALESCE(NULL, NULL, 'C', NULL) third
+FROM    dual;        
+
+-- ====================================
+-- COALESCE 실습용 테이블을 생성
+-- ====================================
+CREATE TABLE contact (
+    id NUMBER PRIMARY KEY,
+    name VARCHAR2(30) NOT NULL,
+    home_num CHAR(11), -- 집 전화
+    phone_num CHAR(11), -- 휴대폰
+    office_num CHAR(11) -- 사무실 전화
+);
+
+-- 실습용 샘플 데이터 삽입
+INSERT INTO CONTACT
+VALUES (1, '홍길동', '0623456789', NULL, NULL);
+INSERT INTO CONTACT
+VALUES (2, '이순신', NULL, '0103456789', NULL);
+INSERT INTO CONTACT
+VALUES (3, '홍두깨', NULL, NULL, '0612223333');
+INSERT INTO CONTACT
+VALUES (4, '하니', '0107778888', NULL, '0612223333');
+
+-- 조회
+SELECT *
+FROM    contact;
+
+-- COALESCE 사용
+SELECT ID, NAME, COALESCE(HOME_NUM, PHONE_NUM, OFFICE_NUM) tel
+FROM    contact;
+
+-- 1) 현재는 Memory 에서 트랜잭션 처리 --> 실제 물리데이터로 저장하려면? COMMIT 처리, 아니면 ROLLBACK;
+COMMIT; -- ORACLE DBMS가 파일로 (어딘가에) 저장하고
+DROP TABLE contact;  -- 테이블과 데이터를 모두 삭제
+
+-- 2) contact 생성 전, 데이터 입력 전으로 돌아가려면
+ROLLBACK;
+
+-- [연습문제3-4] 
+-- 1. (전체)사원의 사번, 이름, 부서, 매니저번호를 조회하는 쿼리를 작성하시오
+-- 단, 매니저가 있는 사원은 Manger로 표시, 매니저가 없는 사원은 No Manger라고 표시하시오
+-- 매니저도 사원중 하나
+-- 단, 사장(PRESIDENT)은 매니저가 없다.
+SELECT  employee_id, first_name||' '||last_name name, department_id,
+        NVL2(manager_id,'Manager','No Manger') manager
+FROM    employees
+--WHERE   manager_id IS NOT NULL;
+ORDER BY employee_id;
+
+
+
 -- 3.6 DECODE와 CASE
+-- SQL(=Structured Query Language) / 구조화된 질의어   vs 프로그래밍 언어 / 절차적인 언어
+-- 프로그래밍 언어에서 조건에 따라 명령을 실행하는 IF문 사용합니다. 오라클에서는 DECODE와 CASE가 같은 역할을 합니다.
+-- ※ PL/SQL (=SQL을 확장한 절차적 프로그래밍 언어) : 프로그래밍 문법 + SQL (오라클 전용 문법)
+-- T-SQL : 다른 DBMS에서 사용하는 PL/SQL의 이름
+
+-- IF ~ ELSE IF 구문과 유사!
+-- 3.6.1 DECODE(exp, search1, result1, search2, result2, ... [,default])
+-- exp 표현식을 검사하여 search1과 일치하면 result1을, search2와 일치하면 result2를,...일치하지 않으면 default를
+-- 반환하는 함수
+
+[예제3-36] 보너스 지급에 있어서 20번 부서는 급여의 20%를 보너스로 지급,
+          30번 부서는 급여의 30%를 보너스로 지급, 40번 부서는 급여의 40%를 보너스로 지급하며
+          그외의 부서는 보너스를 지급하지 않는다고 할때, 각 부서별 보너스를 지급받는 사원들의 정보를 조회하시오
+
+SELECT  employee_id emp_id, last_name, department_id dept_id, TO_CHAR(salary, '$9,999,999') salary,
+        LTRIM(TO_CHAR(DECODE(department_id, 20, salary * 0.2, 
+                              30, salary * 0.3,
+                              40, salary * 0.4, 
+                              0), '$9,999,999')) bonus
+FROM    employees
+WHERE   manager_id IS NOT NULL -- 사장님 빼고~ 106 rows
+ORDER BY    employee_id;
+
+
+-- 3.6.2 CASE
+-- 함수보다 더 큰 개념을 가진 표현식
+-- DECODE는 동등 비교만 가능한데, CASE는 더 다양한 연산(동등비교, 범위비교,..)을 할수 있다.
+-- 1) DECODE와 같은 동등비교
+CASE exp WHEN search1 THEN result1
+         WHEN search2 THEN result2
+         ...계속..
+         [ELSE default]
+END    
+
+[예제 3-37] DECODE() 함수로 작성했던 20번 부서 20% 보너스, 30번 부서 30% 보너스, 40번 부서 40% 보너스를 지급하고
+그 외의 부서는 보너스를 지급하지 않는 조건식을 CASE WHEN ~ THEN END로 바꿔서 작성해보시오
+SELECT  employee_id emp_id, last_name, department_id dept_id, TO_CHAR(salary, '$9,999,999') salary,
+        CASE department_id WHEN 20 THEN salary * 0.2
+                           WHEN 30 THEN salary * 0.3
+                           WHEN 40 THEN salary * 0.4
+                           ELSE 0
+        END bonus                          
+FROM    employees
+WHERE   manager_id IS NOT NULL -- 사장님 빼고~ 106 rows
+ORDER BY    employee_id;
+
+-- 2) DECODE와 다르게 조건비교
+CASE WHEN condition1(exp, operator) THEN result1
+     WHEN condition2(exp, operator) THEN result2
+     ...계속...
+     [ELSE default]
+END
+
+-- 30번 미만 부서는 급여의 10%를 보너스로 지급하고, 30번 부터 50번 까지는 20%를, 60번 부서부터 80번 부서 까지는 
+-- 급여를 30%를 지급하고 그 외의 부서는 급여의 40%를 보너스로 지급하고자 할때!
+-- DECODE() : 동등 비교
+-- CASE ~ END : 동등 비교, 범위 비교
+SELECT  employee_id emp_id, last_name, department_id dept_id, TO_CHAR(salary, '$9,999,999') salary,
+        CASE WHEN department_id < 30 THEN salary * 0.1
+             WHEN department_id BETWEEN 30 AND 50 THEN salary * 0.2
+             WHEN department_id BETWEEN 60 AND 80 THEN salary * 0.3
+             ELSE salary * 0.4
+        END bonus,
+        
+FROM    employees
+WHERE   manager_id IS NOT NULL -- 사장님 빼고~ 106 rows
+ORDER BY    3;
+
 
 
 
