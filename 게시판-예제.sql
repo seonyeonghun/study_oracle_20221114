@@ -20,6 +20,30 @@ CREATE TABLE POST (
     post_date DATE DEFAULT SYSDATE
 );
 
+-- 게시판ID 컬럼이 추가되고 제약조건이 추가되어야 함
+ALTER TABLE POST
+ADD post_board NUMBER(4);
+
+DESC POST;
+
+ALTER TABLE POST
+ADD CONSTRAINT post_board_id_fk FOREIGN KEY (post_board) REFERENCES BOARD (board_id);
+
+SELECT *
+FROM    POST;
+
+/*
+    이미 기존 데이터가 있는 상태에서 새로운 컬럼을 추가하면, null이 삽입
+    --> 옳지 않음..update 해주거나, 삭제후 다시 삽입
+    post_id   post_title    post_writer  post_date  post_board
+    ----------------------------------------------------------
+    1	오라클 DBMS에 학습하기	1	22/11/28	null
+    2	혼자공부하는 JAVA 심화	1	22/11/28	null
+    3	1인 개발자의 공부법	2	22/11/28	null
+*/
+-- 테이블의 구조는 유지하고, 데이터 행을 모두 삭제 (null 처리 목적)
+TRUNCATE TABLE POST;
+
 -- 작성자 게시판 : 어느글을 누가 썼는지 상세한 정보를 담는..이름/이메일/전화번호
 CREATE TABLE WRITER (
     writer_id NUMBER PRIMARY KEY,
@@ -27,6 +51,9 @@ CREATE TABLE WRITER (
     writer_date DATE DEFAULT SYSDATE,
     writer_email VARCHAR2(50)
 )
+
+
+
 -- 외래키 제약조건(FK)
 ALTER TABLE POST
 ADD CONSTRAINT post_writer_fk FOREIGN KEY (post_writer) REFERENCES WRITER (writer_id);
@@ -45,12 +72,14 @@ FROM    post;
 
 -- 2. post 정보를 입력
 INSERT INTO POST
-VALUES (0001, '오라클 DBMS에 학습하기', 1, SYSDATE);
+VALUES (0001, '홍길동, 출석완료!', 1, SYSDATE, 0001);
 INSERT INTO POST
-VALUES (0002, '혼자공부하는 JAVA 심화', 1, SYSDATE);
+VALUES (0002, '오늘 정말 추워요!', 1, SYSDATE, 0002);
 INSERT INTO POST
-VALUES (0003, '1인 개발자의 공부법', 2, SYSDATE);
+VALUES (0003, 'ORACLE 설치방법?', 2, SYSDATE, 0003);
 
+SELECT *
+FROM    post;
 -- JOIN 조회
 -- 오라클 조인
 SELECT  p.post_id, p.post_title, p.post_date write_date,
@@ -58,7 +87,33 @@ SELECT  p.post_id, p.post_title, p.post_date write_date,
 FROM    post p, writer w
 WHERE   p.post_writer = w.writer_id;
 
+--BOARD 테이블 추가
+CREATE TABLE BOARD (
+    board_id NUMBER(4) PRIMARY KEY,
+    board_name VARCHAR2(30) NOT NULL,
+    board_date DATE DEFAULT SYSDATE
+);
 
+-- 샘플데이터
+INSERT INTO BOARD
+VALUES  (0001, '출석 게시판', TO_DATE('22/11/14'));
+INSERT INTO BOARD
+VALUES  (0002, '자유 게시판', TO_DATE('22/11/14'));
+INSERT INTO BOARD
+VALUES  (0003, '질문답변 게시판', TO_DATE('22/11/14'));
+
+
+SELECT * 
+FROM    POST;
+
+SELECT * 
+FROM    BOARD;
+
+-- POST에 BOARD 이름 정보를 조회
+SELECT  p.POST_ID, p.POST_TITLE, p.POST_DATE, 
+        b.BOARD_NAME
+FROM    POST p, BOARD b       
+WHERE   p.POST_BOARD = b.board_id;
 
 
 
