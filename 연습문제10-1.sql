@@ -200,6 +200,8 @@ SELECT  constraint_name, constraint_type, owner
 FROM    user_constraints
 WHERE   table_name = 'CASTING';
 
+-- !!! 연습문제10-2 3번에서 중복데이터 입력문제 발생 --> 제약조건을 다시 확인 필요 !!!
+
 /* 제약조건
     -- 데이터의 무결성을 보장하기 위한 --> 컬럼에 잘못된 데이터가 입력되지 않도록 --> 정합성 목적!
     -- NOT NULL, CHECK, UNIQUE, PRIMARY KEY, FOREIGN KEY
